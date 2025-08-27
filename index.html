@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Showcase</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">3D Model Showcase</h1>
+            <p class="subtitle">Interactive 3D Model with 360° Rotation</p>
+        </header>
+        
+        <main class="main-content">
+            <div id="canvas-container" class="canvas-container">
+                <canvas id="three-canvas"></canvas>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Loading 3D Model...</p>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="auto-rotate-btn" class="control-btn active">Auto Rotate</button>
+                <button id="reset-camera-btn" class="control-btn">Reset View</button>
+            </div>
+            
+            <div class="info">
+                <p>Use your mouse to interact with the 3D model:</p>
+                <ul>
+                    <li><strong>Left click + drag:</strong> Rotate the model</li>
+                    <li><strong>Right click + drag:</strong> Pan the view</li>
+                    <li><strong>Scroll:</strong> Zoom in/out</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
