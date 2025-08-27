@@ -1,12 +1,11 @@
-// 3D Model Showcase JavaScript
+// Simple 3D Fashion Viewer - Auto Rotate Only
 class ThreeDModelViewer {
     constructor() {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
-        this.controls = null;
         this.model = null;
-        this.autoRotate = true;
+        this.rotationSpeed = 0.005;
         
         this.init();
     }
@@ -16,66 +15,83 @@ class ThreeDModelViewer {
         this.setupCamera();
         this.setupRenderer();
         this.setupLights();
-        this.setupControls();
-        this.createDefaultModel();
+        this.loadGLBModel();
         this.setupEventListeners();
         this.animate();
-        this.hideLoading();
     }
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a1a);
+        // Transparent background to match the website design
+        this.scene.background = null;
+        
+        // Add subtle fog for depth
+        this.scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
     }
 
     setupCamera() {
+        const canvas = document.getElementById('three-canvas');
+        const rect = canvas.getBoundingClientRect();
+        
         this.camera = new THREE.PerspectiveCamera(
-            75,
-            window.innerWidth / window.innerHeight,
+            50,
+            rect.width / rect.height,
             0.1,
             1000
         );
-        this.camera.position.set(0, 0, 5);
+        this.camera.position.set(0, 0, 3);
     }
 
     setupRenderer() {
         const canvas = document.getElementById('three-canvas');
+        const rect = canvas.getBoundingClientRect();
+        
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: canvas, 
             antialias: true,
-            alpha: true 
+            alpha: true
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(rect.width, rect.height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1;
+        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.setClearColor(0x000000, 0);
     }
 
     setupLights() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        // Much brighter ambient light for better visibility
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         this.scene.add(ambientLight);
 
-        // Main directional light
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        // Main directional light - brighter and warmer
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(10, 10, 5);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
         this.scene.add(directionalLight);
 
-        // Fill light
-        const fillLight = new THREE.DirectionalLight(0x6188ea, 0.3);
-        fillLight.position.set(-5, 5, -5);
+        // Front fill light - much brighter
+        const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        fillLight.position.set(0, 5, 10);
         this.scene.add(fillLight);
 
-        // Rim light
-        const rimLight = new THREE.DirectionalLight(0xffffff, 0.2);
-        rimLight.position.set(0, -10, -5);
-        this.scene.add(rimLight);
+        // Side rim lights for better definition
+        const rimLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        rimLight1.position.set(-10, 5, 0);
+        this.scene.add(rimLight1);
+        
+        const rimLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        rimLight2.position.set(10, 5, 0);
+        this.scene.add(rimLight2);
+        
+        // Bottom up light to eliminate dark areas
+        const bottomLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        bottomLight.position.set(0, -5, 0);
+        this.scene.add(bottomLight);
     }
 
     setupControls() {
@@ -88,80 +104,110 @@ class ThreeDModelViewer {
         this.controls.maxDistance = 10;
     }
 
-    createDefaultModel() {
-        // Create a beautiful geometric model as default
-        const geometry = new THREE.DodecahedronGeometry(1, 1);
+    loadGLBModel() {
+        const loader = new THREE.GLTFLoader();
+        const loadingElement = document.getElementById('loading');
         
-        // Create material with gradient-like effect
+        loader.load(
+            './vestido1.glb',
+            (gltf) => {
+                console.log('Model loaded successfully:', gltf);
+                
+                this.model = gltf.scene;
+                
+                // Scale and position the model - much bigger!
+                this.model.scale.setScalar(4);
+                this.model.position.set(0, -2, 0);
+                
+                // Enable shadows for all meshes
+                this.model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        // Enhance material properties
+                        if (child.material) {
+                            child.material.envMapIntensity = 0.8;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                });
+                
+                // Set up animations if any
+                if (gltf.animations && gltf.animations.length > 0) {
+                    this.mixer = new THREE.AnimationMixer(this.model);
+                    gltf.animations.forEach((clip) => {
+                        this.mixer.clipAction(clip).play();
+                    });
+                }
+                
+                this.scene.add(this.model);
+                this.hideLoading();
+                
+                // Adjust camera to fit the model
+                this.fitCameraToModel();
+            },
+            (progress) => {
+                const percent = (progress.loaded / progress.total * 100);
+                console.log(`Loading progress: ${percent.toFixed(1)}%`);
+            },
+            (error) => {
+                console.error('Error loading GLB model:', error);
+                console.log('Falling back to default model...');
+                this.createDefaultModel();
+                this.hideLoading();
+            }
+        );
+    }
+    
+    createDefaultModel() {
+        // Fallback model if GLB fails to load
+        const geometry = new THREE.ConeGeometry(1, 2, 8);
         const material = new THREE.MeshPhysicalMaterial({
-            color: 0x6188ea,
-            metalness: 0.7,
-            roughness: 0.2,
-            clearcoat: 0.3,
-            clearcoatRoughness: 0.1,
+            color: 0x1f51ff,
+            metalness: 0.3,
+            roughness: 0.4,
+            clearcoat: 0.8,
+            clearcoatRoughness: 0.2,
         });
 
         this.model = new THREE.Mesh(geometry, material);
         this.model.castShadow = true;
         this.model.receiveShadow = true;
+        this.model.position.set(0, 0, 0);
         this.scene.add(this.model);
-
-        // Add inner glow effect
-        const glowGeometry = new THREE.DodecahedronGeometry(0.95, 1);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x6188ea,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.BackSide
-        });
-        const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-        this.model.add(glowMesh);
-
-        // Add wireframe overlay
-        const wireframeGeometry = new THREE.DodecahedronGeometry(1.01, 1);
-        const wireframeMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.1
-        });
-        const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
-        this.scene.add(wireframeMesh);
+    }
+    
+    fitCameraToModel() {
+        if (!this.model) return;
+        
+        const box = new THREE.Box3().setFromObject(this.model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        
+        cameraZ *= 1.2; // Less padding for bigger appearance
+        
+        this.camera.position.set(center.x, center.y, center.z + cameraZ);
+        this.camera.lookAt(center);
     }
 
     setupEventListeners() {
-        // Window resize
+        // Window resize only
         window.addEventListener('resize', () => this.onWindowResize());
-
-        // Auto rotate toggle
-        document.getElementById('auto-rotate-btn').addEventListener('click', () => {
-            this.toggleAutoRotate();
-        });
-
-        // Reset camera
-        document.getElementById('reset-camera-btn').addEventListener('click', () => {
-            this.resetCamera();
-        });
     }
 
-    toggleAutoRotate() {
-        this.autoRotate = !this.autoRotate;
-        this.controls.autoRotate = this.autoRotate;
-        
-        const btn = document.getElementById('auto-rotate-btn');
-        btn.classList.toggle('active', this.autoRotate);
-        btn.textContent = this.autoRotate ? 'Auto Rotate' : 'Manual Control';
-    }
-
-    resetCamera() {
-        this.camera.position.set(0, 0, 5);
-        this.controls.reset();
-    }
 
     onWindowResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        const canvas = document.getElementById('three-canvas');
+        const rect = canvas.getBoundingClientRect();
+        
+        this.camera.aspect = rect.width / rect.height;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setSize(rect.width, rect.height);
     }
 
     hideLoading() {
@@ -177,18 +223,154 @@ class ThreeDModelViewer {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Manual rotation when auto-rotate is off
-        if (this.model && this.autoRotate) {
-            this.model.rotation.y += 0.005;
-            this.model.rotation.x += 0.002;
+        // Simple auto-rotation
+        if (this.model) {
+            this.model.rotation.y += this.rotationSpeed;
         }
         
-        this.controls.update();
         this.renderer.render(this.scene, this.camera);
     }
+}
+
+// Countdown functionality
+class CountdownTimer {
+    constructor() {
+        // Set the countdown to a fixed future date (September 5, 2025)
+        // This way the countdown is consistent for everyone and actually counts down
+        const targetDate = new Date('2025-09-05T00:00:00');
+        this.countDownDate = targetDate.getTime();
+        this.startCountdown();
+    }
+    
+    startCountdown() {
+        // Update the countdown every 1 second
+        this.timer = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = this.countDownDate - now;
+            
+            // Time calculations
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Display the countdown
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            
+            // If the countdown is finished
+            if (distance < 0) {
+                clearInterval(this.timer);
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                
+                // You could show a message here when countdown finishes
+                console.log('¡El regalo ha llegado!');
+            }
+        }, 1000);
+    }
+}
+
+// Spectacular Confetti Explosion Animation
+function createConfettiExplosion() {
+    // Check if confetti library is loaded
+    if (typeof confetti === 'undefined') {
+        console.warn('Canvas-confetti library not loaded');
+        return;
+    }
+
+    // Multiple explosion bursts for maximum impact!
+    const duration = 6000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { 
+        startVelocity: 30, 
+        spread: 360, 
+        ticks: 60, 
+        zIndex: 1000,
+        colors: ['#ff6b9d', '#ffd700', '#ff4757', '#00d2d3', '#3742fa', '#2ed573', '#ff9ff3', '#f9ca24']
+    };
+
+    function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    // First explosion - Center burst
+    confetti({
+        ...defaults,
+        particleCount: 150,
+        spread: 120,
+        origin: { x: 0.5, y: 0.5 }
+    });
+
+    // Second explosion - Left side
+    setTimeout(() => {
+        confetti({
+            ...defaults,
+            particleCount: 100,
+            spread: 80,
+            origin: { x: 0.3, y: 0.4 }
+        });
+    }, 300);
+
+    // Third explosion - Right side  
+    setTimeout(() => {
+        confetti({
+            ...defaults,
+            particleCount: 100,
+            spread: 80,
+            origin: { x: 0.7, y: 0.4 }
+        });
+    }, 600);
+
+    // Continuous random bursts
+    const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        
+        // Random position bursts
+        confetti({
+            ...defaults,
+            particleCount,
+            origin: { 
+                x: randomInRange(0.2, 0.8), 
+                y: randomInRange(0.3, 0.7) 
+            }
+        });
+    }, 400);
+
+    // Final big explosion
+    setTimeout(() => {
+        confetti({
+            ...defaults,
+            particleCount: 200,
+            spread: 160,
+            startVelocity: 45,
+            origin: { x: 0.5, y: 0.6 }
+        });
+    }, 2000);
+}
+
+// Trigger confetti explosion on page load
+function startPageAnimation() {
+    // Small delay to let the page settle
+    setTimeout(() => {
+        createConfettiExplosion();
+    }, 1000);
 }
 
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     new ThreeDModelViewer();
+    new CountdownTimer();
+    startPageAnimation();
 });

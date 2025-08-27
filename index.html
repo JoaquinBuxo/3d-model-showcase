@@ -1,44 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Model Showcase</title>
+    <title>¡Feliz Santo Mónica!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1 class="title">3D Model Showcase</h1>
-            <p class="subtitle">Interactive 3D Model with 360° Rotation</p>
-        </header>
-        
-        <main class="main-content">
-            <div id="canvas-container" class="canvas-container">
-                <canvas id="three-canvas"></canvas>
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Loading 3D Model...</p>
+    <div class="gift-container">
+        <!-- 3D Model - Full Screen -->
+        <div class="model-stage">
+            <canvas id="three-canvas"></canvas>
+            <div class="loading-overlay" id="loading">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <p>Preparando tu regalo...</p>
                 </div>
             </div>
-            
-            <div class="controls">
-                <button id="auto-rotate-btn" class="control-btn active">Auto Rotate</button>
-                <button id="reset-camera-btn" class="control-btn">Reset View</button>
+        </div>
+
+        <!-- Gift Message Overlay -->
+        <div class="message-overlay">
+            <div class="gift-message">
+                <h1 class="main-title">¡Feliz Santo Mónica!</h1>
+                <p class="subtitle">El regalo está en camino</p>
+                
+                <div class="countdown" id="countdown">
+                    <div class="time-unit">
+                        <span class="number" id="days">07</span>
+                        <span class="label">días</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="number" id="hours">00</span>
+                        <span class="label">horas</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="number" id="minutes">00</span>
+                        <span class="label">min</span>
+                    </div>
+                    <div class="time-unit">
+                        <span class="number" id="seconds">00</span>
+                        <span class="label">seg</span>
+                    </div>
+                </div>
+                
+                <div class="delivery-note">
+                    <span class="asterisk">*</span>
+                    <p class="note-text">Debería llegar entre el 2 y el 5 de Septiembre</p>
+                </div>
             </div>
-            
-            <div class="info">
-                <p>Use your mouse to interact with the 3D model:</p>
-                <ul>
-                    <li><strong>Left click + drag:</strong> Rotate the model</li>
-                    <li><strong>Right click + drag:</strong> Pan the view</li>
-                    <li><strong>Scroll:</strong> Zoom in/out</li>
-                </ul>
-            </div>
-        </main>
+        </div>
+
+        <!-- Decorative Elements -->
+        <div class="sparkles">
+            <div class="sparkle sparkle-1">✨</div>
+            <div class="sparkle sparkle-2">✨</div>
+            <div class="sparkle sparkle-3">✨</div>
+            <div class="sparkle sparkle-4">✨</div>
+            <div class="sparkle sparkle-5">✨</div>
+        </div>
+
     </div>
     
     <script src="script.js"></script>
